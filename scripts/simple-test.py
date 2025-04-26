@@ -26,7 +26,7 @@ def midi_to_freq(midi_note):
     return 440 * (2 ** ((midi_note - 69) / 12.0))
 
 # Base sound file
-base_sound_path = "piano.wav"
+base_sound_path = "samples/piano.wav"
 if not os.path.exists(base_sound_path):
     print(f"Error: {base_sound_path} not found!")
     exit(1)
