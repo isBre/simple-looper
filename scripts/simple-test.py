@@ -80,10 +80,17 @@ def midi_callback(message, timestamp):
     if msg_type == 0x90 and velocity > 0:  # Note On
         if note in note_sounds:
             snd = note_sounds[note]
-            snd.set_volume(velocity / 127.0)
-            snd.play()
+            ch = snd.play(loops=-1)  # loops=-1 to make it loop indefinitely
+            if ch is not None:
+                ch.set_volume(velocity / 127.0)
+                note_channels[note] = ch  # store channel
+    elif (msg_type == 0x80) or (msg_type == 0x90 and velocity == 0):  # Note Off
+        if note in note_channels:
+            ch = note_channels.pop(note)  # remove from dict
+            ch.fadeout(30)
 
 # Attach callback
+note_channels = {}
 midi_in.callback = midi_callback
 
 # --- Main loop ---
