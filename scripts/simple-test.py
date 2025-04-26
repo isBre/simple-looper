@@ -87,7 +87,7 @@ def midi_callback(message, timestamp):
     elif (msg_type == 0x80) or (msg_type == 0x90 and velocity == 0):  # Note Off
         if note in note_channels:
             ch = note_channels.pop(note)  # remove from dict
-            ch.fadeout(30)
+            ch.fadeout(100)
 
 # Attach callback
 note_channels = {}
