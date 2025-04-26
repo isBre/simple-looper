@@ -1,22 +1,25 @@
-import rtmidi
+import rtmidi2
 import time
 import os
 import pygame
 import numpy as np
 from scipy.signal import resample
-from rtmidi import MidiMessage
 
 # Initialize pygame and its mixer
 pygame.init()
 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
 
 # Setup MIDI input
-midi_in = rtmidi.RtMidiIn()
-available_ports = range(midi_in.getPortCount())
-
+midi_in = rtmidi2.MidiIn()
+available_ports = rtmidi2.get_in_ports()
 akai_port = 1  # Akai Should be port n.1
-print(f"Opening MIDI port {akai_port}: {midi_in.getPortName(akai_port) if akai_port < len(available_ports) else 'Invalid port'}")
-midi_in.openPort(akai_port)
+
+if akai_port < len(available_ports):
+    print(f"Opening MIDI port {akai_port}: {available_ports[akai_port]}")
+    midi_in.open_port(akai_port)
+else:
+    print(f"Invalid port {akai_port}. Available ports: {available_ports}")
+    exit(1)
 
 # MIDI note number for C3 (where our sample is)
 C3_MIDI = 48
@@ -30,7 +33,7 @@ base_sound_path = "samples/piano.wav"
 if not os.path.exists(base_sound_path):
     print(f"Error: {base_sound_path} not found!")
     exit(1)
-    
+
 # Load the base sound
 base_sound = pygame.mixer.Sound(base_sound_path)
 
@@ -64,32 +67,40 @@ for note in range(21, 109):
 print("Done creating sounds.")
 
 # Function to handle note on/off events
-def handle_midi_message(message: MidiMessage):        
-    status = message.isNoteOn()
-    note = message.getNoteNumber()
-    velocity = message.getVelocity()
+def midi_callback(message, time_stamp):
+    # rtmidi2 callback provides the message as a list [status_byte, data1, data2]
+    if not message:
+        return
+        
+    status_byte = message[0]
+    channel = status_byte & 0xF  # Extract channel (0-15)
+    msg_type = status_byte & 0xF0  # Extract message type
     
-    # Check if it's a note on message (144-159) with velocity > 0
-    if status and velocity > 0:
-        # Note on
-        if note in note_sounds:
-            note_sounds[note].set_volume(velocity / 127.0)  # 
-            note_sounds[note].play()  
-    
-    # Note off is either a note on with velocity 0 or a note off message (128-143)
-    # In pygame, we don't need to explicitly handle note off as sounds play once
+    if len(message) >= 3:  # Make sure we have enough data
+        note = message[1]
+        velocity = message[2]
+        
+        # Note On: 0x90 (144) through 0x9F (159)
+        if msg_type == 0x90 and velocity > 0:
+            if note in note_sounds:
+                note_sounds[note].set_volume(velocity / 127.0)
+                note_sounds[note].play()
+                print(f"Note ON: {note}, velocity: {velocity}, channel: {channel}")
+        
+        # We don't need to handle Note Off events (0x80) explicitly as sounds play once
+        # But we could stop sounds if needed
+
+# Set the callback for the MIDI input
+midi_in.callback = midi_callback
 
 print("Listening for MIDI messages. Press Ctrl+C to exit.")
 try:
+    # Keep the program running until Ctrl+C is pressed
     while True:
-        message = midi_in.getMessage(250)  # 250ms timeout
-        if message:
-            print(f"Raw MIDI message: {message}")
-            handle_midi_message(message)
-        # time.sleep(0.001)  # Small delay to prevent CPU hogging
+        time.sleep(0.1)  # Small delay to prevent CPU hogging
 except KeyboardInterrupt:
     print("Exiting...")
 finally:
-    midi_in.closePort()
+    midi_in.close_port()
     pygame.quit()
     print("MIDI port closed and pygame shut down.")
