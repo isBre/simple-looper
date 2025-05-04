@@ -1,0 +1,5 @@
+rtmidi2>=0.1.1
+numpy>=1.19.0
+sounddevice>=0.4.1
+soundfile>=0.10.3
+scipy

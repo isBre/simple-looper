@@ -67,10 +67,8 @@ for note in range(21, 109):
 print("Done creating sounds.")
 
 # Function to handle note on/off events
-def midi_callback(message, time_stamp):
-    # rtmidi2 callback provides the message as a list [status_byte, data1, data2]
-    if not message:
-        return
+# This is called whenever a key is pressed
+def midi_callback(message: tuple[int, int, int], time_stamp: float):
         
     status_byte = message[0]
     channel = status_byte & 0xF  # Extract channel (0-15)
