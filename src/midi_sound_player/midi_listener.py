@@ -54,7 +54,7 @@ class MidiListener:
             sound_path, 
             freq=freq, 
             volume=velocity/127.0, 
-            loop=True
+            loop=False
         )
         
         # Store the sound instance so we can stop it later

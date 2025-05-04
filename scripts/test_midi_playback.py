@@ -22,7 +22,7 @@ def main():
                        help='MIDI input port (default: 1)')
     parser.add_argument('--config', type=str,
                        help='Configuration file (optional)')
-    parser.add_argument('--device', type=int, default=8,
+    parser.add_argument('--device', type=int, default=9,
                        help='PipeWire device ID (default: 8)')
     args = parser.parse_args()
     
